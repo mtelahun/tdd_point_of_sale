@@ -46,4 +46,17 @@ mod tests {
         // Assert
         assert_eq!(price, Decimal::from(12_50), "Barcode 23456 price is 12.50");
     }
+
+    #[test]
+    fn given_barcode_99999_then_display_not_found() {
+        // Arrange
+        let barcode = "99999";
+        let pos = PointOfSale {};
+
+        // Act
+        let price = pos.scan(barcode);
+
+        // Assert
+        assert_eq!(price.err(), Error::NotFound, "Barcode 99999: not found");
+    }
 }
