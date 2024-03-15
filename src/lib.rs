@@ -1,15 +1,57 @@
+use std::collections::HashMap;
+
 use rust_decimal::Decimal;
 
-#[derive(Debug)]
-pub struct PointOfSale {
-    #[allow(dead_code)]
+#[derive(Debug, Default)]
+pub struct PointOfSale<'a> {
     sum: Decimal,
+    prices: HashMap<&'a str, Decimal>,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
     IsEmpty,
     NotFound,
+}
+
+impl<'a> PointOfSale<'a> {
+    pub fn new() -> Self {
+        let mut db = HashMap::new();
+        db.insert("12345", Decimal::new(725, 2));
+        db.insert("23456", Decimal::new(1250, 2));
+
+        Self {
+            sum: Decimal::ZERO,
+            prices: db,
+        }
+    }
+
+    pub fn scan(&mut self, barcode: &str) -> Result<Decimal, Error> {
+        if barcode.is_empty() {
+            Err(Error::IsEmpty)
+        } else {
+            match self.db_lookup(barcode) {
+                Ok(price) => {
+                    self.sum += price;
+
+                    Ok(price)
+                }
+                Err(e) => Err(e),
+            }
+        }
+    }
+
+    pub fn command(&self, _cmd: &str) -> Decimal {
+        self.sum
+    }
+
+    fn db_lookup(&self, barcode: &str) -> Result<Decimal, Error> {
+        if !self.prices.contains_key(barcode) {
+            return Err(Error::NotFound);
+        }
+
+        Ok(*self.prices.get(barcode).unwrap())
+    }
 }
 
 impl std::fmt::Display for Error {
@@ -24,36 +66,6 @@ impl std::fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
-
-impl PointOfSale {
-    pub fn new() -> Self {
-        Self {
-            sum: Decimal::ZERO,
-        }
-    }
-
-    pub fn scan(&mut self, barcode: &str) -> Result<Decimal, Error> {
-        if barcode.is_empty() {
-            Err(Error::IsEmpty)
-        } else if barcode == "12345" {
-            let price = Decimal::new(725, 2);
-            self.sum += price;
-
-            Ok(price)
-        } else if barcode == "23456" {
-            let price = Decimal::new(1250, 2);
-            self.sum += price;
-
-            Ok(price)
-        } else {
-            Err(Error::NotFound)
-        }
-    }
-
-    pub fn command(&self, _cmd: &str) -> Decimal {
-        self.sum
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -73,7 +85,11 @@ mod tests {
         let price = pos.scan(barcode);
 
         // Assert
-        assert_eq!(price.unwrap(), Decimal::from_str("7.25").unwrap(), "Barcode 1234 price is 7.25");
+        assert_eq!(
+            price.unwrap(),
+            Decimal::from_str("7.25").unwrap(),
+            "Barcode 1234 price is 7.25"
+        );
     }
 
     #[test]
@@ -86,7 +102,11 @@ mod tests {
         let price = pos.scan(barcode);
 
         // Assert
-        assert_eq!(price.unwrap(), Decimal::from_str("12.50").unwrap(), "Barcode 23456 price is 12.50");
+        assert_eq!(
+            price.unwrap(),
+            Decimal::from_str("12.50").unwrap(),
+            "Barcode 23456 price is 12.50"
+        );
     }
 
     #[test]
@@ -99,7 +119,11 @@ mod tests {
         let price = pos.scan(barcode);
 
         // Assert
-        assert_eq!(price.err().unwrap(), Error::NotFound, "Barcode 99999: not found");
+        assert_eq!(
+            price.err().unwrap(),
+            Error::NotFound,
+            "Barcode 99999: not found"
+        );
     }
 
     #[test]
@@ -112,7 +136,11 @@ mod tests {
         let price = pos.scan(barcode);
 
         // Assert
-        assert_eq!(price.err().unwrap(), Error::IsEmpty, "Barcode 99999: not found");
+        assert_eq!(
+            price.err().unwrap(),
+            Error::IsEmpty,
+            "Barcode 99999: not found"
+        );
     }
 
     #[test]
@@ -121,10 +149,10 @@ mod tests {
         let cmd = "total";
         let mut pos = PointOfSale::new();
         let p1 = pos
-            .scan("12345")  // 7.25
+            .scan("12345") // 7.25
             .expect("failed to scan barcode '12345'");
         let p2 = pos
-            .scan("23456")  // 12.50
+            .scan("23456") // 12.50
             .expect("failed to scan barcode '23456'");
         let pos = pos;
 
