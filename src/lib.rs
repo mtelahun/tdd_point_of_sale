@@ -3,14 +3,27 @@ use rust_decimal::Decimal;
 #[derive(Debug)]
 pub struct PointOfSale {}
 
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    NotFound,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "pos error: barcode not found")
+    }
+}
+
+impl std::error::Error for Error {}
+
 impl PointOfSale {
-    pub fn scan(&self, barcode: &str) -> Decimal {
+    pub fn scan(&self, barcode: &str) -> Result<Decimal, Error> {
         if barcode == "12345" {
-            Decimal::from(7_25)
+            Ok(Decimal::from(7_25))
         } else if barcode == "23456" {
-            Decimal::from(12_50)
+            Ok(Decimal::from(12_50))
         } else {
-            Decimal::ZERO
+            Err(Error::NotFound)
         }
     }
 }
@@ -19,7 +32,7 @@ impl PointOfSale {
 mod tests {
     use rust_decimal::Decimal;
 
-    use crate::PointOfSale;
+    use crate::{Error, PointOfSale};
 
     #[test]
     fn given_barcode_12345_then_display_7_25() {
@@ -31,7 +44,7 @@ mod tests {
         let price = pos.scan(barcode);
 
         // Assert
-        assert_eq!(price, Decimal::from(7_25), "Barcode 1234 price is 7.25");
+        assert_eq!(price.unwrap(), Decimal::from(7_25), "Barcode 1234 price is 7.25");
     }
 
     #[test]
@@ -44,7 +57,7 @@ mod tests {
         let price = pos.scan(barcode);
 
         // Assert
-        assert_eq!(price, Decimal::from(12_50), "Barcode 23456 price is 12.50");
+        assert_eq!(price.unwrap(), Decimal::from(12_50), "Barcode 23456 price is 12.50");
     }
 
     #[test]
@@ -57,6 +70,6 @@ mod tests {
         let price = pos.scan(barcode);
 
         // Assert
-        assert_eq!(price.err(), Error::NotFound, "Barcode 99999: not found");
+        assert_eq!(price.err().unwrap(), Error::NotFound, "Barcode 99999: not found");
     }
 }
