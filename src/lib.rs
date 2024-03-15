@@ -72,4 +72,17 @@ mod tests {
         // Assert
         assert_eq!(price.err().unwrap(), Error::NotFound, "Barcode 99999: not found");
     }
+
+    #[test]
+    fn given_empty_barcode_then_return_empty_barcode() {
+        // Arrange
+        let barcode = "";
+        let pos = PointOfSale {};
+
+        // Act
+        let price = pos.scan(barcode);
+
+        // Assert
+        assert_eq!(price.err().unwrap(), Error::Empty, "Barcode 99999: not found");
+    }
 }
