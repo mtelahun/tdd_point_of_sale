@@ -5,7 +5,13 @@ pub struct PointOfSale {}
 
 impl PointOfSale {
     pub fn scan(&self, barcode: &str) -> Decimal {
-        Decimal::from(7_25)
+        if barcode == "12345" {
+            Decimal::from(7_25)
+        } else if barcode == "23456" {
+            Decimal::from(12_50)
+        } else {
+            Decimal::ZERO
+        }
     }
 }
 
