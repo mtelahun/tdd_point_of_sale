@@ -5,12 +5,18 @@ pub struct PointOfSale {}
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
+    IsEmpty,
     NotFound,
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "pos error: barcode not found")
+        let msg = match self {
+            Error::IsEmpty => "empty barcode",
+            Error::NotFound => "barcode not found",
+        };
+
+        write!(f, "pos error: {msg}")
     }
 }
 
@@ -18,7 +24,9 @@ impl std::error::Error for Error {}
 
 impl PointOfSale {
     pub fn scan(&self, barcode: &str) -> Result<Decimal, Error> {
-        if barcode == "12345" {
+        if barcode.is_empty() {
+            Err(Error::IsEmpty)
+        } else if barcode == "12345" {
             Ok(Decimal::from(7_25))
         } else if barcode == "23456" {
             Ok(Decimal::from(12_50))
@@ -83,6 +91,6 @@ mod tests {
         let price = pos.scan(barcode);
 
         // Assert
-        assert_eq!(price.err().unwrap(), Error::Empty, "Barcode 99999: not found");
+        assert_eq!(price.err().unwrap(), Error::IsEmpty, "Barcode 99999: not found");
     }
 }
